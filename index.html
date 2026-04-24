@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 노래 스타일 조합기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: linear-gradient(#f8fafc, #ffffff);
+      color: #111827;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .emoji {
+      font-size: 44px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    .hint {
+      font-size: 14px;
+      color: #64748b;
+      font-weight: normal;
+    }
+
+    .fixed-style {
+      background: #f1f5f9;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .fixed-style span {
+      font-weight: 400;
+      color: #64748b;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .option {
+      border: 1px solid #d1d5db;
+      background: white;
+      color: #111827;
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      transition: 0.15s;
+      min-height: 72px;
+    }
+
+    .option:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .option.selected {
+      border: 2px solid #111827;
+      background: #111827;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .option .en {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .option .ko {
+      font-size: 14px;
+      opacity: 0.75;
+      margin-top: 4px;
+    }
+
+    .result-section {
+      border: 2px solid #111827;
+    }
+
+    .result {
+      background: #f1f5f9;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .main-button, .sub-button {
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .main-button {
+      border: 0;
+      background: #111827;
+      color: white;
+    }
+
+    .sub-button {
+      border: 1px solid #d1d5db;
+      background: white;
+      color: #111827;
+    }
+
+    .note {
+      color: #64748b;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .section {
+        padding: 16px;
+      }
+
+      .result {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="emoji">🎵</div>
+      <h1>AI 노래 스타일 조합기</h1>
+      <p class="subtitle">선택하면 영어 프롬프트가 자동으로 만들어집니다.</p>
+    </header>
+
+    <section class="section">
+      <h2>기본 스타일</h2>
+      <div class="fixed-style">K-pop style <span>(케이팝 스타일)</span></div>
+      <p class="note">모든 노래는 K-pop style로 고정됩니다.</p>
+    </section>
+
+    <section class="section">
+      <h2>1. 보컬 선택 <span class="hint">(1개 선택)</span></h2>
+      <div class="grid" id="vocal-options"></div>
+    </section>
+
+    <section class="section">
+      <h2>2. 템포 선택 <span class="hint">(Slow tempo 금지)</span></h2>
+      <div class="grid" id="tempo-options"></div>
+    </section>
+
+    <section class="section">
+      <h2>3. 분위기 선택 <span class="hint">(2~3개 선택)</span></h2>
+      <div class="grid" id="mood-options"></div>
+      <p class="note" id="mood-note">분위기는 최대 3개까지 선택할 수 있습니다.</p>
+    </section>
+
+    <section class="section result-section">
+      <h2>완성된 AI 입력 문장</h2>
+      <div class="result" id="result"></div>
+      <div class="button-row">
+        <button class="main-button" id="copy-button">복사하기</button>
+        <button class="sub-button" id="reset-button">처음으로</button>
+      </div>
+      <p class="note">권장 길이: 40초 ~ 1분 20초. 길이 설정이 가능하면 60 seconds 또는 under 80 seconds를 입력하세요.</p>
+    </section>
+  </div>
+
+  <script>
+    const fixedStyle = "K-pop style";
+
+    const vocalOptions = [
+      { en: "Male vocal", ko: "남성 보컬" },
+      { en: "Female vocal", ko: "여성 보컬" }
+    ];
+
+    const tempoOptions = [
+      { en: "Mid-tempo", ko: "중간 속도" },
+      { en: "Fast tempo", ko: "빠른 속도" }
+    ];
+
+    const moodOptions = [
+      { en: "Light", ko: "밝고 가벼운" },
+      { en: "Energetic", ko: "활기찬" },
+      { en: "Uplifting", ko: "기분 좋아지는" },
+      { en: "Bright", ko: "밝은" },
+      { en: "Emotional", ko: "감정적인" },
+      { en: "Warm", ko: "따뜻한" },
+      { en: "Soft", ko: "부드러운" },
+      { en: "Calm", ko: "차분한" },
+      { en: "Melodic", ko: "멜로디 중심" },
+      { en: "Rhythmic", ko: "리듬감 있는" },
+      { en: "Catchy", ko: "귀에 잘 들어오는" },
+      { en: "Groovy", ko: "그루브 있는" },
+      { en: "Clean", ko: "깔끔한 사운드" },
+      { en: "Modern", ko: "현대적인" },
+      { en: "Simple", ko: "단순한 구조" }
+    ];
+
+    let selectedVocal = "Male vocal";
+    let selectedTempo = "Mid-tempo";
+    let selectedMoods = ["Light", "Emotional", "Melodic"];
+
+    function makeButton(option, selected, onClick) {
+      const button = document.createElement("button");
+      button.className = "option" + (selected ? " selected" : "");
+      button.type = "button";
+      button.innerHTML = `<div class="en">${option.en}</div><div class="ko">${option.ko}</div>`;
+      button.addEventListener("click", onClick);
+      return button;
+    }
+
+    function renderOptions() {
+      const vocalBox = document.getElementById("vocal-options");
+      const tempoBox = document.getElementById("tempo-options");
+      const moodBox = document.getElementById("mood-options");
+
+      vocalBox.innerHTML = "";
+      tempoBox.innerHTML = "";
+      moodBox.innerHTML = "";
+
+      vocalOptions.forEach((option) => {
+        vocalBox.appendChild(makeButton(option, selectedVocal === option.en, () => {
+          selectedVocal = option.en;
+          renderOptions();
+          updateResult();
+        }));
+      });
+
+      tempoOptions.forEach((option) => {
+        tempoBox.appendChild(makeButton(option, selectedTempo === option.en, () => {
+          selectedTempo = option.en;
+          renderOptions();
+          updateResult();
+        }));
+      });
+
+      moodOptions.forEach((option) => {
+        moodBox.appendChild(makeButton(option, selectedMoods.includes(option.en), () => {
+          if (selectedMoods.includes(option.en)) {
+            selectedMoods = selectedMoods.filter((mood) => mood !== option.en);
+          } else {
+            if (selectedMoods.length >= 3) return;
+            selectedMoods.push(option.en);
+          }
+          renderOptions();
+          updateResult();
+        }));
+      });
+    }
+
+    function updateResult() {
+      const prompt = [selectedVocal, fixedStyle, ...selectedMoods, selectedTempo].join(", ");
+      document.getElementById("result").textContent = prompt;
+      document.getElementById("copy-button").textContent = "복사하기";
+    }
+
+    async function copyPrompt() {
+      const text = document.getElementById("result").textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("copy-button").textContent = "복사 완료!";
+        setTimeout(() => {
+          document.getElementById("copy-button").textContent = "복사하기";
+        }, 1500);
+      } catch (error) {
+        alert("복사가 안 되면 아래 문장을 길게 눌러 직접 복사하세요.\n\n" + text);
+      }
+    }
+
+    function resetAll() {
+      selectedVocal = "Male vocal";
+      selectedTempo = "Mid-tempo";
+      selectedMoods = ["Light", "Emotional", "Melodic"];
+      renderOptions();
+      updateResult();
+    }
+
+    document.getElementById("copy-button").addEventListener("click", copyPrompt);
+    document.getElementById("reset-button").addEventListener("click", resetAll);
+
+    renderOptions();
+    updateResult();
+  </script>
+</body>
+</html>
